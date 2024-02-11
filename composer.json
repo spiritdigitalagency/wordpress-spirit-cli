@@ -1,0 +1,25 @@
+{
+	"name": "spiritdigitalagency/wordpress-spirit-cli",
+	"description": "Getting things done!",
+	"type": "wp-cli-package",
+	"authors": [
+		{
+			"name": "Spirit Digital",
+			"email": "hi@spiritdigital.agency",
+			"homepage": "https://spiritdigital.agency"
+		}
+	],
+	"homepage": "https://github.com/spiritdigitalagency/wordpress-spirit-cli",
+	"support": {
+		"issues": "https://github.com/spiritdigitalagency/wordpress-spirit-cli/issues"
+	},
+	"require": {
+		"php": ">=7.4",
+		"wp-cli/wp-cli": "^2.9"
+	},
+	"license": "MIT",
+	"autoload": {
+		"files": [ "spirit-cli.php" ]
+	},
+	"prefer-stable": true
+}
