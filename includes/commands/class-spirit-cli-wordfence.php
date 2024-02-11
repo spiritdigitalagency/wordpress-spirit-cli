@@ -25,13 +25,13 @@ class WordfenceCommand extends SpiritCliBase {
 		if ( isset( $this->assoc_args['all'] ) ) {
 			$results = $wpdb->get_results(
 				$wpdb->prepare(
-					"SELECT inet6_ntoa(IP) as IP, UA, username, FROM_UNIXTIME(ctime) as at FROM {$wpdb->prefix}_wflogins"
+					"SELECT inet6_ntoa(IP) as IP, UA, username, FROM_UNIXTIME(ctime) as at FROM {$wpdb->prefix}wflogins"
 				)
 			);
 		} else {
 			$results = $wpdb->get_results(
 				$wpdb->prepare(
-					"SELECT inet6_ntoa(IP) as IP, UA, username, FROM_UNIXTIME(ctime) as at FROM {$wpdb->prefix}_wflogins WHERE fail = 1"
+					"SELECT inet6_ntoa(IP) as IP, UA, username, FROM_UNIXTIME(ctime) as at FROM {$wpdb->prefix}wflogins WHERE fail = 1"
 				)
 			);
 		}
