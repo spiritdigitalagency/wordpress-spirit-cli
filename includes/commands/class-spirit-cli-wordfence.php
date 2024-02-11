@@ -5,7 +5,7 @@ class WordfenceCommand extends SpiritCliBase {
 	/**
 	 * Retrieve wordfence failed login attempts data.
 	 *
-	 * @synopsis [--all]
+	 * @synopsis [--all] [--format=<format>]
 	 *
 	 * @param array $args
 	 * @param array $assoc_args
