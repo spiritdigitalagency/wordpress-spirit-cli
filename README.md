@@ -11,7 +11,7 @@
 
 ### Via WP-CLI Package Manager (requires wp-cli >= 2.9)
 
-Just run `wp package install spiritdigitalagency/wordpress-spirit-cli`.
+Just run `wp package install spiritdigitalagency/wordpress-spirit-cli` or `wp package install git@github.com:spiritdigitalagency/wordpress-spirit-cli.git`.
 
 
 ### Installing as a plugin
