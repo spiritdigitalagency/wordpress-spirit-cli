@@ -1,7 +1,7 @@
 <?php
 
 abstract class SpiritCliBase extends \WP_CLI_Command {
-	
+
 	/**
 	 * Holds the command arguments.
 	 *
@@ -19,16 +19,85 @@ abstract class SpiritCliBase extends \WP_CLI_Command {
 	/**
 	 * Processes the provided arguments.
 	 *
-	 * @since 0.1.0
-	 *
 	 * @param array $default_args
 	 * @param array $args
 	 * @param array $default_assoc_args
 	 * @param array $assoc_args
+	 *
+	 * @since 0.1.0
+	 *
 	 */
 	protected function process_args( $default_args = array(), $args = array(), $default_assoc_args = array(), $assoc_args = array() ) {
 		$this->args       = $args + $default_args;
 		$this->assoc_args = wp_parse_args( $assoc_args, $default_assoc_args );
+	}
+
+	protected function wp( $command, $json = false, $options = [] ) {
+		WP_CLI::line('Running: ' . $command);
+		if ($json){
+			$command .= ' --format=json';
+		}
+		return WP_CLI::runcommand( $command, [
+			'launch'       => false,
+			'parse'        => $json ? 'json' : null,
+			'return'        => $json ? true : false,
+			'command_args' => $options
+		] );
+	}
+
+	/**
+	 * Runs through all posts and executes the provided callback for each post.
+	 *
+	 * @param array $query_args
+	 * @param callable $callback
+	 * @param bool $verbose
+	 */
+	protected function all_posts( $query_args, $callback, $verbose = true ) {
+		if ( ! is_callable( $callback ) ) {
+			self::error( __( "The provided callback is invalid", 'sda-wp-cli' ) );
+		}
+
+		$default_args = array(
+			'post_type'              => 'post',
+			'posts_per_page'         => 1000,
+			'post_status'            => array( 'publish', 'pending', 'draft', 'future', 'private' ),
+			'cache_results '         => false,
+			'update_post_meta_cache' => false,
+			'update_post_term_cache' => false,
+			'offset'                 => 0,
+		);
+
+		$query_args = wp_parse_args( $query_args, $default_args );
+		$query      = new \WP_Query( $query_args );
+
+		$counter     = 0;
+		$found_posts = 0;
+		while ( $query->have_posts() ) {
+			$query->the_post();
+
+			$callback();
+
+			if ( 0 === $counter ) {
+				$found_posts = $query->found_posts;
+			}
+
+			$counter ++;
+
+			if ( 0 === $counter % $query_args['posts_per_page'] ) {
+				$this->stop_the_insanity();
+
+				$this->log( sprintf( __( 'Posts Updated: %d/%d', 'sda-wp-cli' ), $counter, $found_posts ), true );
+				$query_args['offset'] += $query_args['posts_per_page'];
+				$query                = new \WP_Query( $query_args );
+			}
+		}
+
+		wp_reset_postdata();
+
+		$this->success( sprintf(
+			__( '%d posts were updated', 'sda-wp-cli' ),
+			$counter
+		), $verbose );
 	}
 
 	/**
@@ -88,66 +157,36 @@ abstract class SpiritCliBase extends \WP_CLI_Command {
 	}
 
 	/**
-	 * Runs through all posts and executes the provided callback for each post.
+	 * Outputs a log message.
 	 *
-	 * @param array    $query_args
-	 * @param callable $callback
-	 * @param bool     $verbose
+	 * @param string $msg
+	 * @param bool $verbose
 	 */
-	protected function all_posts( $query_args, $callback, $verbose = true ) {
-		if ( ! is_callable( $callback ) ) {
-			self::error( __( "The provided callback is invalid", 'sda-wp-cli' ) );
+	protected function log( $msg, $verbose ) {
+		if ( $verbose ) {
+			WP_CLI::log( $msg );
 		}
+	}
 
-		$default_args = array(
-			'post_type'              => 'post',
-			'posts_per_page'         => 1000,
-			'post_status'            => array( 'publish', 'pending', 'draft', 'future', 'private' ),
-			'cache_results '         => false,
-			'update_post_meta_cache' => false,
-			'update_post_term_cache' => false,
-			'offset'                 => 0,
-		);
-
-		$query_args = wp_parse_args( $query_args, $default_args );
-		$query      = new \WP_Query( $query_args );
-
-		$counter     = 0;
-		$found_posts = 0;
-		while ( $query->have_posts() ) {
-			$query->the_post();
-
-			$callback();
-
-			if ( 0 === $counter ) {
-				$found_posts = $query->found_posts;
-			}
-
-			$counter++;
-
-			if ( 0 === $counter % $query_args['posts_per_page'] ) {
-				$this->stop_the_insanity();
-
-				$this->log( sprintf( __( 'Posts Updated: %d/%d', 'sda-wp-cli' ), $counter, $found_posts ), true );
-				$query_args['offset'] += $query_args['posts_per_page'];
-				$query = new \WP_Query( $query_args );
-			}
+	/**
+	 * Outputs a success message.
+	 *
+	 * @param string $msg
+	 * @param bool $verbose
+	 */
+	protected function success( $msg, $verbose ) {
+		if ( $verbose ) {
+			WP_CLI::success( $msg );
 		}
-
-		wp_reset_postdata();
-
-		$this->success( sprintf(
-			__( '%d posts were updated', 'sda-wp-cli' ),
-			$counter
-		), $verbose );
 	}
 
 	/**
 	 * Runs through all records on a specific table.
 	 *
-	 * @param string   $message
-	 * @param string   $table
+	 * @param string $message
+	 * @param string $table
 	 * @param callable $callback
+	 *
 	 * @return bool
 	 */
 	protected function all_records( $message, $table, $callback ) {
@@ -192,7 +231,7 @@ abstract class SpiritCliBase extends \WP_CLI_Command {
 	 * Outputs a line.
 	 *
 	 * @param string $msg
-	 * @param bool   $verbose
+	 * @param bool $verbose
 	 */
 	protected function line( $msg, $verbose ) {
 		if ( $verbose ) {
@@ -201,34 +240,10 @@ abstract class SpiritCliBase extends \WP_CLI_Command {
 	}
 
 	/**
-	 * Outputs a log message.
-	 *
-	 * @param string $msg
-	 * @param bool   $verbose
-	 */
-	protected function log( $msg, $verbose ) {
-		if ( $verbose ) {
-			WP_CLI::log( $msg );
-		}
-	}
-
-	/**
-	 * Outputs a success message.
-	 *
-	 * @param string $msg
-	 * @param bool   $verbose
-	 */
-	protected function success( $msg, $verbose ) {
-		if ( $verbose ) {
-			WP_CLI::success( $msg );
-		}
-	}
-
-	/**
 	 * Outputs a warning.
 	 *
 	 * @param string $msg
-	 * @param bool   $verbose
+	 * @param bool $verbose
 	 */
 	protected function warning( $msg, $verbose ) {
 		if ( $verbose ) {

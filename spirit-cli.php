@@ -1,7 +1,7 @@
 <?php
 /**
  * Plugin Name: Spirit Digital Blocks
- * Plugin URI: https://github.com/spiritdigitalagency/wp-spirit-cli/
+ * Plugin URI: https://github.com/spiritdigitalagency/wordpress-spirit-cli/
  * Description: Getting things done!
  * Version: 0.1.0
  * Author: Spirit Digital
@@ -9,7 +9,7 @@
  * Text Domain: sda-wp-cli
  * Domain Path: /languages
  *
- * @package spiritdigitalagency/wp-spirit-cli
+ * @package spiritdigitalagency/wordpress-spirit-cli
  */
 if ( ! defined( 'SDA_CLI_VERSION' ) ) {
 	define( 'SDA_CLI_VERSION', '0.1.0' );
@@ -32,3 +32,5 @@ if ( file_exists( __DIR__ . '/vendor/autoload.php' ) ) {
 require_once( SDA_CLI_COMMANDS_PATH . 'class-spirit-cli.php' );
 require_once( SDA_CLI_COMMANDS_PATH . 'class-spirit-cli-base.php' );
 require_once( SDA_CLI_COMMANDS_PATH . 'class-spirit-cli-wordfence.php' );
+require_once( SDA_CLI_COMMANDS_PATH . 'class-spirit-cli-optimize.php' );
+require_once( SDA_CLI_COMMANDS_PATH . 'class-spirit-cli-config.php' );

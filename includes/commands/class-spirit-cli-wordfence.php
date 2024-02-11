@@ -16,6 +16,7 @@ class WordfenceCommand extends SpiritCliBase {
 			$args,
 			array(
 				'all' => null,
+				'fields' => array( 'IP', 'UA', 'username', 'at' ),
 				'format' => 'table',
 			),
 			$assoc_args
@@ -39,7 +40,7 @@ class WordfenceCommand extends SpiritCliBase {
 		WP_CLI\Utils\format_items(
 			$this->assoc_args['format'],
 			$results,
-			[ 'IP', 'UA', 'username', 'at' ]
+			$this->assoc_args['fields']
 		);
 	}
 
