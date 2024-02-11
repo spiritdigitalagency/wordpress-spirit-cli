@@ -14,8 +14,7 @@
 		"issues": "https://github.com/spiritdigitalagency/wordpress-spirit-cli/issues"
 	},
 	"require": {
-		"php": ">=7.4",
-		"wp-cli/wp-cli": ">=2.9"
+		"php": ">=7.4"
 	},
 	"license": "MIT",
 	"autoload": {
