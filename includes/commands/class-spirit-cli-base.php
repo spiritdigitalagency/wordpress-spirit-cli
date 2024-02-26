@@ -17,6 +17,57 @@ abstract class SpiritCliBase extends \WP_CLI_Command {
 	protected $assoc_args;
 
 	/**
+	 * Check whether the site is running over the Nginx web server.
+	 *
+	 * @return bool TRUE if the site is running over Nginx, FALSE otherwise.
+	 */
+	public static function isNginxServer() {
+		return (bool) ( stripos( @$_SERVER['SERVER_SOFTWARE'], 'nginx' ) !== false );
+	}
+
+	/**
+	 * Check whether the site is running over the Nginx web server.
+	 *
+	 * @return bool TRUE if the site is running over Nginx, FALSE otherwise.
+	 */
+	public static function isIISServer() {
+		return (bool) ( stripos( @$_SERVER['SERVER_SOFTWARE'], 'Microsoft-IIS' ) !== false );
+	}
+
+	public static function scanAllDir( $dir ) {
+		$result = [];
+		foreach ( scandir( $dir ) as $filename ) {
+			if ( $filename[0] === '.' ) {
+				continue;
+			}
+			$filePath = $dir . '/' . $filename;
+			if ( is_dir( $filePath ) ) {
+				foreach ( scanAllDir( $filePath ) as $childFilename ) {
+					$result[] = $filename . '/' . $childFilename;
+				}
+			} else {
+				$result[] = $filename;
+			}
+		}
+
+		return $result;
+	}
+
+	public static function find( $pattern, $folder = null ) {
+		$path = '';
+		if ( ! empty( $folder ) ) {
+			$path = rtrim( $folder, '\/' ) . DIRECTORY_SEPARATOR;
+		}
+		$files       = \WP_CLI\Utils\glob_brace( $path . $pattern );
+		$directories = glob( $path . '*', GLOB_ONLYDIR | GLOB_NOSORT | GLOB_MARK );
+		foreach ( $directories as $directory ) {
+			array_push( $files, ...self::find( $pattern, $directory ) );
+		}
+
+		return array_unique( $files );
+	}
+
+	/**
 	 * Processes the provided arguments.
 	 *
 	 * @param array $default_args
@@ -32,17 +83,48 @@ abstract class SpiritCliBase extends \WP_CLI_Command {
 		$this->assoc_args = wp_parse_args( $assoc_args, $default_assoc_args );
 	}
 
-	protected function wp( $command, $json = false, $options = [] ) {
-		WP_CLI::line('Running: ' . $command);
-		if ($json){
-			$command .= ' --format=json';
+	protected function wp( $command, $options = [] ) {
+		$command = str_replace( 'wp ', '', $command );
+		WP_CLI::line( 'Running: wp ' . $command );
+
+		$json = str_contains( $command, '--format=json' );
+		try {
+			$options['back_compat_conversions'] = false;
+			$response = WP_CLI::runcommand( $command, [
+				'launch'       => false,
+				'exit_error'       => false,
+				'parse'        => $json ? 'json' : false,
+				'return'       => 'all',
+				'command_args' => $options
+			] );
+			WP_CLI::line( 'Code ' . $response->return_code );
+			if ( ! empty( $response->stderr ) ) {
+				var_dump($response);
+				return false;
+			}
+			if ( $json ) {
+				var_dump($response->stdout);
+				return json_decode( $response->stdout, true );
+			}
+
+			return $response->stdout;
+		} catch ( Exception $exception ) {
+			var_dump( $exception->getMessage() );
 		}
-		return WP_CLI::runcommand( $command, [
-			'launch'       => false,
-			'parse'        => $json ? 'json' : null,
-			'return'        => $json ? true : false,
-			'command_args' => $options
-		] );
+
+		return false;
+	}
+
+	/**
+	 * Outputs a line.
+	 *
+	 * @param string $msg
+	 * @param bool $verbose
+	 */
+	protected function line( $msg, $verbose ) {
+		if ( $verbose ) {
+			WP_CLI::line( $msg );
+		}
 	}
 
 	/**
@@ -225,18 +307,6 @@ abstract class SpiritCliBase extends \WP_CLI_Command {
 			$offset += $step;
 
 		} while ( $results );
-	}
-
-	/**
-	 * Outputs a line.
-	 *
-	 * @param string $msg
-	 * @param bool $verbose
-	 */
-	protected function line( $msg, $verbose ) {
-		if ( $verbose ) {
-			WP_CLI::line( $msg );
-		}
 	}
 
 	/**

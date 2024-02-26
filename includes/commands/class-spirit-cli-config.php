@@ -77,6 +77,37 @@ class ConfigCommand extends SpiritCliBase {
 		}
 	}
 
+	public function wordpress( $args = array(), $assoc_args = array() ) {
+		$options = [
+			'timezone_string'              => "Europe/Athens",
+			'date_format'                  => "d/m/Y",
+			'time_format'                  => "H:i",
+			'start_of_week'                => 1,
+			'default_pingback_flag'        => "0",
+			'default_ping_status'          => "0",
+			'default_comment_status'       => "0",
+			'require_name_email'           => "1",
+			'comment_registration'         => "1",
+			'close_comments_for_old_posts' => "0",
+			'thread_comments'              => "0",
+			'page_comments'                => "0",
+			'comments_notify'              => "0",
+			'moderation_notify'            => "0",
+			'comment_moderation'           => "1",
+			'comment_previously_approved'  => "1",
+			'show_avatars'                 => "0",
+		];
+		foreach ( $options as $key => $value ) {
+			$this->wp( "option update $key '$value'" );
+		}
+		$this->wp( "language core update" );
+		$this->wp( "language core install el" );
+		$this->wp( "site switch-language el" );
+
+		$this->wp( "rewrite structure '/%postname%/'" );
+		$this->wp( "spirit police approve" );
+	}
+
 	/**
 	 * Initial setup greek woocommerce store
 	 *
@@ -139,34 +170,57 @@ class ConfigCommand extends SpiritCliBase {
 //			$this->wp( "option update $key '$value'" );
 		}
 
-		$taxes = $this->wp( "wc tax list --field=rate", true);
-		if (!in_array(24, $taxes)){
-			$this->wp( 'wc tax create --country=GR --city=* --postcode=* --rate=24.0000 --name=ΦΠΑ-24% --priority=1 --compound=0 --shipping=1'  );
+		$taxes = $this->wp( "wc tax list --field=rate --format=json" );
+		if ( ! in_array( 24, $taxes ) ) {
+			$this->wp( 'wc tax create --country=GR --city=* --postcode=* --rate=24.0000 --name=ΦΠΑ-24% --priority=1 --compound=0 --shipping=1' );
 		}
-		if (!in_array(13, $taxes)){
-			$this->wp( 'wc tax create --country=GR --city=* --postcode=* --rate=13.0000 --name=ΦΠΑ-13% --class=reduced-rate --priority=1 --compound=0 --shipping=0'  );
+		if ( ! in_array( 13, $taxes ) ) {
+			$this->wp( 'wc tax create --country=GR --city=* --postcode=* --rate=13.0000 --name=ΦΠΑ-13% --class=reduced-rate --priority=1 --compound=0 --shipping=0' );
 		}
-		if (!in_array(6, $taxes)){
-			$this->wp( 'wc tax create --country=GR --city=* --postcode=* --rate=6.0000 --name=ΦΠΑ-6% --class=reduced-rate --priority=1 --compound=0 --shipping=0'  );
+		if ( ! in_array( 6, $taxes ) ) {
+			$this->wp( 'wc tax create --country=GR --city=* --postcode=* --rate=6.0000 --name=ΦΠΑ-6% --class=reduced-rate --priority=1 --compound=0 --shipping=0' );
 		}
-		if (!in_array(0, $taxes)){
-			$this->wp( 'wc tax create --country=GR --city=* --postcode=* --rate=0.0000 --name=ΦΠΑ-0% --class=zero-rate --priority=1 --compound=0 --shipping=0'  );
+		if ( ! in_array( 0, $taxes ) ) {
+			$this->wp( 'wc tax create --country=GR --city=* --postcode=* --rate=0.0000 --name=ΦΠΑ-0% --class=zero-rate --priority=1 --compound=0 --shipping=0' );
 		}
 
 		$zone_id = 0;
-		$zones = $this->wp( "wc shipping_zone list --fields=name,id", true );
-		foreach ($zones as $zone){
-			if ($zone['name'] == 'Greece'){
+		$zones   = $this->wp( "wc shipping_zone list --fields=name,id --format=json" );
+		foreach ( $zones as $zone ) {
+			if ( $zone['name'] == 'Greece' ) {
 				$zone_id = $zone['id'];
 			}
 		}
-		if (empty($zone_id)){
-			$zone_id = $this->wp( "wc shipping_zone create --name=Greece --porcelain", true );
+		if ( empty( $zone_id ) && count( $zones ) < 2 ) {
+			$zone_id = $this->wp( 'wc shipping_zone create --name=Greece --porcelain' );
 		}
-		$shipping_methods = $this->wp( "wc shipping_zone_method list $zone_id --field=method_id", true);
-		if (!in_array('flat_rate', $shipping_methods)){
-			var_dump($this->wp( 'wc shipping_zone_method create ' . $zone_id . ' --method_id=flat_rate --enabled=1 --settings="{\"title\":\"$METHOD_NAME\",\"tax_status\":\"taxable\",\"cost\":\"0\"}"' ));die;
+		$shipping_methods = $this->wp( "wc shipping_zone_method list $zone_id --field=method_id --format=json" );
+		if ( ! in_array( 'flat_rate', $shipping_methods ) ) {
+			$settings = [
+//				'title' => 'Αποστολή με courier',
+				'title'      => 'Courier',
+				'tax_status' => 'taxable',
+				'cost'       => '4'
+			];
+			$param    = str_replace( '"', '"', json_encode( $settings ) );
+			$this->wp( 'wc shipping_zone_method create ' . $zone_id . ' --method_id=flat_rate --enabled=1 --settings=' . $param . '' );
 		}
+//		if (!in_array('local_pickup', $shipping_methods)){
+//			$settings = [
+////				'title' => 'Αποστολή με courier',
+//				'title' => 'Παραλαβή',
+//				'tax_status' => 'taxable',
+//				'cost' => '0'
+//			];
+//			$param = str_replace('"','"', json_encode($settings));
+//			$this->wp( 'wc shipping_zone_method create ' . $zone_id . ' --method_id=local_pickup --enabled=1 --settings=' . $param . '' );
+//		}
+
+//		$this->wp( 'wc payment_gateway update bacs --enabled=1 --settings=' . str_replace('"','\"', json_encode([
+//				'title' => 'Κατάθεση\\ σε\\ λογαριασμό',
+////				'description' => 'Πραγματοποιήστε την πληρωμή σας με τραπεζική κατάθεση σε λογαριασμό της εταιρείας.',
+//				'instructions' => '',
+//			])) . '' );
 		$this->wp( 'rewrite flush' );
 	}
 }

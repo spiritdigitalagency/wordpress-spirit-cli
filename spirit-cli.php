@@ -34,3 +34,4 @@ require_once( SDA_CLI_COMMANDS_PATH . 'class-spirit-cli-base.php' );
 require_once( SDA_CLI_COMMANDS_PATH . 'class-spirit-cli-wordfence.php' );
 require_once( SDA_CLI_COMMANDS_PATH . 'class-spirit-cli-optimize.php' );
 require_once( SDA_CLI_COMMANDS_PATH . 'class-spirit-cli-config.php' );
+require_once( SDA_CLI_COMMANDS_PATH . 'class-spirit-cli-police.php' );

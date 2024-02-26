@@ -24,7 +24,7 @@ class OptimizeCommand extends SpiritCliBase {
 		$this->trackbacks();
 		$this->comments();
 		$this->commentmeta();
-//		$this->terms();
+		$this->terms();
 		$this->postmeta();
 		$this->usermeta();
 		$this->scheduler();
@@ -146,7 +146,7 @@ class OptimizeCommand extends SpiritCliBase {
 	 * @param array $assoc_args
 	 */
 	public function terms( $args = array(), $assoc_args = array() ) {
-		$orphan_count_query = "SELECT COUNT(*) FROM `" . $this->term_relationships . "` WHERE term_taxonomy_id=1 AND object_id NOT IN (SELECT id FROM `" . $this->wpdb->posts . "`);";
+		$orphan_count_query = "SELECT COUNT(*) FROM `" . $this->wpdb->term_relationships . "` WHERE term_taxonomy_id=1 AND object_id NOT IN (SELECT id FROM `" . $this->wpdb->posts . "`);";
 		WP_CLI::line('Deleting ' . $this->wpdb->get_var($orphan_count_query) . ' orphan term relations.');
 		$clean = "DELETE FROM `" . $this->wpdb->term_relationships . "` WHERE term_taxonomy_id=1 AND object_id NOT IN (SELECT id FROM `" . $this->wpdb->posts . "`);";
 		$this->wpdb->query($clean);
